@@ -281,11 +281,18 @@ else:
                             with open(FILES["ban"], "a") as f: f.write(u_man + "\n")
                             st.rerun()
 
-                with at3: # HAM VERİ (ÇÖZÜLMÜŞ)
-                    st.subheader("📋 Tüm Trafik (Admin İçin Şifreleri Çözülmüş)")
-                    raw_data = [l.strip().split("|") for l in open(FILES["priv"], "r", encoding="utf-8").readlines() if "|" in l]
-                    # Admin tablosunda mesajlar her zaman coz() ile cozulur.
-                    st.table([{"Kimden": d[0], "Kime": d[1], "Mesaj": coz(d[2])} for d in raw_data])
+               with at3: # HAM VERİ (TAM ÇÖZÜLMÜŞ)
+            st.subheader("📋 Tüm Trafik (Şifreler Çözüldü)")
+            if os.path.exists(FILES["priv"]):
+            raw_lines = open(FILES["priv"], "r", encoding="utf-8").readlines()
+            data_list = []
+                for rl in raw_lines:
+                    if "|" in rl:
+                        d = rl.strip().split("|")
+                        # Mesajı burada çözüyoruz kanka
+                        data_list.append({"Kimden": d[0], "Kime": d[1], "Mesaj": coz(d[2])})
+                st.table(data_list)
+                    
 
                 with at4: # UYARI YÖNETİMİ
                     st.subheader("Aktif Uyarı Listesi")
