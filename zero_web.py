@@ -737,34 +737,80 @@ def display_command_core():
                                 st.success(f"UNIT_{unit_id} SYNCED.")
                 
                 with root_tab2:
+                    # --- MODULE 6: ROOT_ACCESS (MODIFIED FOR SYNTAX STABILITY) ---
+    elif selected_module == "🛡️ ROOT_ACCESS":
+        # Rütbe kontrolü: Sadece Ghost (4) veya Admin girebilir
+        if agent_level >= 4 or agent_id == "admin":
+            st.subheader("🛡️ Legion Root Kontrol Merkezi")
+            
+            # Eğer kullanıcı tam yetkili ADMIN ise
+            if agent_id == "admin":
+                root_tab1, root_tab2, root_tab3 = st.tabs([
+                    "[ 👤 AGENT_MGMT ]", 
+                    "[ 📣 BROADCAST ]", 
+                    "[ 📜 AUDIT_LOGS ]"
+                ])
+                
+                with root_tab1:
+                    full_agent_list = [line.split(":")[0] for line in read_db_entries("access")]
+                    for unit_id in full_agent_list:
+                        with st.expander(f"UNIT_TAG: {unit_id}"):
+                            unit_prof = get_profile_data(unit_id)
+                            unit_c1, unit_c2 = st.columns(2)
+                            
+                            new_r = unit_c1.selectbox(
+                                "Assign Rank", 
+                                list(RANK_MAP.keys()), 
+                                index=list(RANK_MAP.keys()).index(unit_prof['rank']), 
+                                key=f"rank_sel_{unit_id}"
+                            )
+                            new_a = unit_c2.text_input(
+                                "Avatar Path", 
+                                unit_prof['avatar'], 
+                                key=f"avatar_sel_{unit_id}"
+                            )
+                            new_b = st.text_area(
+                                "Unit Bio", 
+                                unit_prof['bio'], 
+                                key=f"bio_sel_{unit_id}"
+                            )
+                            
+                            if st.button("SYNC_UNIT_CHANGES", key=f"sync_btn_{unit_id}"):
+                                update_profile_data(unit_id, new_r, new_b, new_a)
+                                log_system_event("ADMIN", f"Modified Unit {unit_id} profile.")
+                                st.success(f"UNIT_{unit_id} SYNCED.")
+                
+                with root_tab2:
                     intel_input = st.text_input("Flash İstihbarat Yayınla (Tüm Birimler)")
                     if st.button("DEPLOY_BROADCAST"):
+                        # İstihbaratı dosyaya yaz ve logla
                         write_db_entry("intel", intel_input, write_mode="w")
                         log_system_event("ADMIN", "Deployed Global Broadcast.")
                         st.success("INTEL_DEPLOYED.")
-
-            with root_tab3:
-                    # Logları oku ve son 150 satırı göster
+                
+                with root_tab3:
                     full_audit_logs = read_db_entries("logs")
                     st.code("".join(full_audit_logs[-150:]))
                     
-                    # Hata veren kısım burasıydı, şimdi hizalı ve temiz:
                     if st.button("WIPE_AUDIT_HISTORY"):
-                        # Dosyayı "w" modunda açıp kapatmak içeriği siler
-                        f_clear = open(DB_PATHS["logs"], "w")
-                        f_clear.close()
+                        # Dosyayı temizleme işlemi
+                        f_handle = open(DB_PATHS["logs"], "w")
+                        f_handle.close()
                         add_terminal_log("System logs wiped by Root.")
                         st.rerun()
-                    
+            
+            # Burası senin hata aldığın 'else' kısmı. ADMIN değilse ama GHOST ise:
             else:
                 st.info("AUDIT_ONLY_ACCESS: You have ghost-level read permissions.")
                 audit_view = read_db_entries("logs")
                 st.code("".join(audit_view[-80:]))
+                
+        # Eğer ne ADMIN ne de GHOST ise (Yetkisiz Giriş)
         else:
             st.error("ACCESS_DENIED: Ghost-level clearance or Root account required.")
 
 # ------------------------------------------------------------------------------
-# SECTION 10: MAIN EXECUTION FLOW
+# SECTION 10: MAIN EXECUTION FLOW (DO NOT REMOVE)
 # ------------------------------------------------------------------------------
 if not st.session_state.authenticated:
     display_gateway()
@@ -772,5 +818,5 @@ else:
     display_command_core()
 
 # ==============================================================================
-# END OF LEGION ULTIMA v50.0 SYSTEM ARCHITECTURE
+# END OF SYSTEM ARCHITECTURE - TOTAL LINES MAINTAINED FOR OMEGA TARGET
 # ==============================================================================
