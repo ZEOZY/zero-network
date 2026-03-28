@@ -54,21 +54,35 @@ def decode_text(enc):
 def text_to_bin(t):
     """Metni binary diziye çevirir."""
     return [format(ord(i), '08b') for i in t]
-
-def hide_text_in_image(img, secret):
-    """Metni fotoğrafın piksel bitlerine gizler (LSB metodu)."""
-    # Mesajı şifrele ve binary'e çevir.
-    secure_msg = encode_text(secret)
-    binary_secret = "".join(text_to_bin(secure_msg)) + '1111111111111110' # Son bit
     
-    # Fotoğrafı piksel dizisine çevir.
-    img_array = np.array(img)
+def hide_text_in_image(img, secret):
+    """Metni fotoğrafın piksel bitlerine gizler (Güvenli LSB)."""
+    secure_msg = encode_text(secret)
+    # Bit bit mesajı hazırla ve bitiş imzasını ekle
+    binary_secret = "".join(text_to_bin(secure_msg)) + '1111111111111110'
+    
+    # Fotoğrafı değiştirilebilir bir numpy dizisine çevir (uint8 zorunlu)
+    img_array = np.array(img, dtype=np.uint8)
     rows, cols, channels = img_array.shape
     
-    # Mesaj sığıyor mu kontrol et.
     if len(binary_secret) > rows * cols * channels:
-        return None, "Yetersiz Görüntü Verisi: Mesaj bu fotoğrafa sığmıyor."
+        return None, "Hata: Mesaj bu fotoğraf için çok büyük!"
 
+    idx = 0
+    # İşlemi hızlandırmak ve hatayı önlemek için düzleştirilmiş dizi kullanıyoruz
+    flat_img = img_array.flatten()
+    
+    for i in range(len(binary_secret)):
+        # Mevcut piksel değerini al
+        val = int(flat_img[i]) 
+        # Son biti temizle ve mesaj bitini ekle
+        new_val = (val & ~1) | int(binary_secret[i])
+        # Geri yaz (0-255 aralığında kalmasını garanti et)
+        flat_img[i] = np.uint8(new_val)
+    
+    # Diziyi orijinal şekline geri döndür
+    res_img = flat_img.reshape((rows, cols, channels))
+    return Image.fromarray(res_img), "Gölge Deseni başarıyla enjekte edildi."
     # Bit gizleme işlemi (Hata payı sıfır).
     idx = 0
     for r in range(rows):
