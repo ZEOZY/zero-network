@@ -9,7 +9,6 @@ import base64
 from datetime import datetime
 
 # --- SYSTEM DIRECTORY SETUP ---
-# V30'un en sevdiğin özelliği dosyaları anında oluşturmasıydı.
 CORE_DIR = "legion_data_v30"
 if not os.path.exists(CORE_DIR):
     os.makedirs(CORE_DIR)
@@ -25,7 +24,6 @@ for path in DB_PATHS.values():
         with open(path, "a", encoding="utf-8") as f: pass
 
 # --- V30 CRYPTO ENGINE ---
-# Basit ama etkili Legion alfabesi
 K_S = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijk_lmnoöprsştuüvyz 0123456789.,!?+-/*:()[]{}@#$%"
 V_S = "!?*#$+%&/=+-_.:;<|>@æß~ΔΩμπ∞≈≠≤≥¶§÷×•¤†‡±√¬°^º¥©®™¿¡øæ∫çαβγδεζηθικλνξοπρστυφχψω"
 E_D, D_D = dict(zip(K_S, V_S)), dict(zip(V_S, K_S))
@@ -72,10 +70,11 @@ def main():
                     st.session_state.update({'auth': True, 'user': u, 'rank': 'GHOST'})
                     st.rerun()
                 else:
-                    with open(DB_PATHS["auth"], "r") as f:
-                        if f"{u}:{p}\n" in f.readlines():
-                            st.session_state.update({'auth': True, 'user': u, 'rank': 'MEMBER'})
-                            st.rerun()
+                    if os.path.exists(DB_PATHS["auth"]):
+                        with open(DB_PATHS["auth"], "r") as f:
+                            if f"{u}:{p}\n" in f.readlines():
+                                st.session_state.update({'auth': True, 'user': u, 'rank': 'MEMBER'})
+                                st.rerun()
         
         with t2:
             nu = st.text_input("NEW ID")
@@ -117,20 +116,4 @@ def main():
             st.subheader("🛠️ CRYPTO STATION")
             c1, c2 = st.columns(2)
             with c1:
-                t_e = st.text_area("To Encrypt")
-                if st.button("PROCESS"): st.code(crypt_v30(t_e))
-            with c2:
-                t_d = st.text_area("To Decrypt")
-                if st.button("REVEAL"): st.info(crypt_v30(t_d, "dec"))
-
-        elif menu == "ROOT":
-            if st.session_state.rank == "GHOST":
-                st.subheader("🛡️ ROOT OVERRIDE")
-                if st.button("PURGE GLOBAL FEED"):
-                    open(DB_PATHS["global"], "w").close()
-                    st.success("Feed Wiped.")
-            else:
-                st.error("ACCESS DENIED: GHOST RANK REQUIRED.")
-
-if __name__ == "__main__":
-    main()
+                t_e = st.text_area("To Enc
