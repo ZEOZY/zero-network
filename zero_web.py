@@ -742,15 +742,19 @@ def display_command_core():
                         write_db_entry("intel", intel_input, write_mode="w")
                         log_system_event("ADMIN", "Deployed Global Broadcast.")
                         st.success("INTEL_DEPLOYED.")
-                
-                with root_tab3:
+
+            with root_tab3:
+                    # Logları oku ve son 150 satırı göster
                     full_audit_logs = read_db_entries("logs")
                     st.code("".join(full_audit_logs[-150:]))
                     
-                 if st.button("WIPE_AUDIT_HISTORY"):
-                    open(DB_PATHS["logs"], "w").close()  # Dosyanın içini boşaltır
-                    add_terminal_log("System logs wiped by Root.")
-                    st.rerun()
+                    # Hata veren kısım burasıydı, şimdi hizalı ve temiz:
+                    if st.button("WIPE_AUDIT_HISTORY"):
+                        # Dosyayı "w" modunda açıp kapatmak içeriği siler
+                        f_clear = open(DB_PATHS["logs"], "w")
+                        f_clear.close()
+                        add_terminal_log("System logs wiped by Root.")
+                        st.rerun()
                     
             else:
                 st.info("AUDIT_ONLY_ACCESS: You have ghost-level read permissions.")
