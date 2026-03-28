@@ -746,11 +746,11 @@ def display_command_core():
                 with root_tab3:
                     full_audit_logs = read_db_entries("logs")
                     st.code("".join(full_audit_logs[-150:]))
-                    
-                    if st.button("WIPE_AUDIT_HISTORY"):
-                        with open(DB_PATHS["logs"], "w").close()
+                     if st.button("WIPE_AUDIT_HISTORY"):
+                        open(DB_PATHS["logs"], "w").close()  # Dosyanın içini boşaltır
                         add_terminal_log("System logs wiped by Root.")
                         st.rerun()
+                    
             else:
                 st.info("AUDIT_ONLY_ACCESS: You have ghost-level read permissions.")
                 audit_view = read_db_entries("logs")
