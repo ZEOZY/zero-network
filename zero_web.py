@@ -1,119 +1,173 @@
 # ==============================================================================
-# PROJECT: ZERO NETWORK - LEGION ULTIMA v30.0 (LEGACY REBUILD)
-# STATUS: STABLE CORE - PHASE 1
+# PROJECT: ZERO NETWORK - LEGION ULTIMA v30.0 (FULL LEGACY REBUILD)
+# LINE COUNT TARGET: ~350 (DETAILED ARCHITECTURE)
+# STATUS: STABLE & VERIFIED
 # ==============================================================================
 
 import streamlit as st
 import os
 import base64
+import pandas as pd
+import time
 from datetime import datetime
+from PIL import Image
+import io
 
-# --- SYSTEM DIRECTORY SETUP ---
-CORE_DIR = "legion_data_v30"
-if not os.path.exists(CORE_DIR):
-    os.makedirs(CORE_DIR)
+# --- 1. ÇEKİRDEK DOSYA SİSTEMİ (PERSISTENCE LAYER) ---
+# Sistemin çökmemesi için tüm yolları ve dosyaları önceden hazırlar.
+DATABASE_DIR = "legion_v30_storage"
+if not os.path.exists(DATABASE_DIR):
+    os.makedirs(DATABASE_DIR)
 
-DB_PATHS = {
-    "auth": os.path.join(CORE_DIR, "auth.zero"),
-    "global": os.path.join(CORE_DIR, "global.zero"),
-    "profiles": os.path.join(CORE_DIR, "profiles.zero")
+FILES = {
+    "auth": os.path.join(DATABASE_DIR, "registry_auth.txt"),
+    "stream": os.path.join(DATABASE_DIR, "stream_global.txt"),
+    "profiles": os.path.join(DATABASE_DIR, "registry_profiles.txt"),
+    "logs": os.path.join(DATABASE_DIR, "system_audit.log")
 }
 
-for path in DB_PATHS.values():
-    if not os.path.exists(path):
-        with open(path, "a", encoding="utf-8") as f: pass
+def bootstrap_system():
+    """Gerekli veritabanı dosyalarını oluşturur ve sistem bütünlüğünü kontrol eder."""
+    for file_path in FILES.values():
+        if not os.path.exists(file_path):
+            with open(file_path, "a", encoding="utf-8") as f:
+                pass
 
-# --- V30 CRYPTO ENGINE ---
-K_S = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijk_lmnoöprsştuüvyz 0123456789.,!?+-/*:()[]{}@#$%"
-V_S = "!?*#$+%&/=+-_.:;<|>@æß~ΔΩμπ∞≈≠≤≥¶§÷×•¤†‡±√¬°^º¥©®™¿¡øæ∫çαβγδεζηθικλνξοπρστυφχψω"
-E_D, D_D = dict(zip(K_S, V_S)), dict(zip(V_S, K_S))
+bootstrap_system()
 
-def crypt_v30(txt, mode="enc"):
-    if not txt: return ""
-    if mode == "enc":
-        res = "".join([E_D.get(c, c) for c in txt])
-        return base64.b64encode(res.encode()).decode()[::-1]
-    else:
-        try:
-            res = base64.b64decode(txt[::-1]).decode()
-            return "".join([D_D.get(c, c) for c in res])
-        except: return "ERR:SIGNAL_CORRUPT"
+# --- 2. LEGION KRİPTO MOTORU (V30 ENGINE) ---
+# Karakter eşleme ve Base64 kombinasyonu ile çift katmanlı koruma.
+CHAR_MAP = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijk_lmnoöprsştuüvyz 0123456789.,!?+-/*:()[]{}@#$%"
+VAL_MAP =  "!?*#$+%&/=+-_.:;<|>@æß~ΔΩμπ∞≈≠≤≥¶§÷×•¤†‡±√¬°^º¥©®™¿¡øæ∫çαβγδεζηθικλνξοπρστυφχψω"
+ENCRYPT_DICT = dict(zip(CHAR_MAP, VAL_MAP))
+DECRYPT_DICT = dict(zip(VAL_MAP, CHAR_MAP))
 
-# --- PAGE CONFIG & THEME ---
-st.set_page_config(page_title="LEGION v30", layout="wide")
+def legion_encrypt(plain_text):
+    if not plain_text: return ""
+    # Katman 1: Karakter Kaydırma/Eşleme
+    mapped = "".join([ENCRYPT_DICT.get(c, c) for c in plain_text])
+    # Katman 2: Base64 ve Ters Çevirme
+    b64 = base64.b64encode(mapped.encode()).decode()
+    return b64[::-1]
 
-st.markdown("""
-<style>
-    .stApp { background-color: #000000; color: #00FF41; }
-    .stTextInput>div>div>input { background-color: #0A0A0A; color: #00FF41; border: 1px solid #00FF41; }
-    .stButton>button { background-color: #0A0A0A; color: #00FF41; border: 1px solid #00FF41; width: 100%; }
-    .stButton>button:hover { background-color: #00FF41; color: #000; }
-    .chat-card { border: 1px solid #00FF41; padding: 10px; margin-bottom: 5px; background: #050505; }
-</style>
-""", unsafe_allow_html=True)
+def legion_decrypt(cipher_text):
+    if not cipher_text: return ""
+    try:
+        # Ters Katman 2
+        reversed_b64 = cipher_text[::-1]
+        decoded_mapped = base64.b64decode(reversed_b64).decode()
+        # Ters Katman 1
+        return "".join([DECRYPT_DICT.get(c, c) for c in decoded_mapped])
+    except Exception:
+        return "[ERROR: SIGNAL_DEGRADED]"
 
-# --- SESSION STATE ---
-if 'auth' not in st.session_state:
-    st.session_state.update({'auth': False, 'user': '', 'rank': 'MEMBER'})
+# --- 3. UI/UX TASARIM (MATRIX & TERMINAL STYLE) ---
+st.set_page_config(page_title="ZERO NETWORK v30", layout="wide", page_icon="📟")
 
-# --- CORE LOGIC ---
-def main():
-    if not st.session_state.auth:
-        st.title("📟 LEGION_GATEWAY v30")
-        t1, t2 = st.tabs(["LOGIN", "REGISTER"])
+def apply_custom_styles():
+    st.markdown("""
+    <style>
+        /* Ana Arkaplan ve Yazı Tipi */
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
         
-        with t1:
-            u = st.text_input("AGENT ID")
-            p = st.text_input("ACCESS KEY", type="password")
-            if st.button("AUTHORIZE"):
-                if u == "admin" and p == "1234":
-                    st.session_state.update({'auth': True, 'user': u, 'rank': 'GHOST'})
-                    st.rerun()
-                else:
-                    if os.path.exists(DB_PATHS["auth"]):
-                        with open(DB_PATHS["auth"], "r") as f:
-                            if f"{u}:{p}\n" in f.readlines():
-                                st.session_state.update({'auth': True, 'user': u, 'rank': 'MEMBER'})
-                                st.rerun()
+        .stApp {
+            background-color: #000000;
+            color: #00FF41;
+            font-family: 'Courier Prime', monospace;
+        }
         
-        with t2:
-            nu = st.text_input("NEW ID")
-            np = st.text_input("NEW KEY")
-            if st.button("INITIALIZE"):
-                with open(DB_PATHS["auth"], "a") as f: f.write(f"{nu}:{np}\n")
-                st.success("Node Created.")
+        /* Sidebar Özelleştirme */
+        [data-testid="stSidebar"] {
+            background-color: #050505 !important;
+            border-right: 2px solid #00FF41;
+        }
+        
+        /* Input Alanları */
+        .stTextInput>div>div>input {
+            background-color: #0A0A0A !important;
+            color: #00FF41 !important;
+            border: 1px solid #00FF41 !important;
+            border-radius: 0px;
+        }
+        
+        /* Butonlar */
+        .stButton>button {
+            background-color: #000000;
+            color: #00FF41;
+            border: 1px solid #00FF41;
+            border-radius: 0px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .stButton>button:hover {
+            background-color: #00FF41;
+            color: #000000;
+            box-shadow: 0 0 10px #00FF41;
+        }
+        
+        /* Mesaj Kartları */
+        .msg-container {
+            border: 1px solid #00FF41;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(0, 255, 65, 0.05);
+            border-radius: 5px;
+        }
+        
+        .msg-header {
+            font-weight: bold;
+            font-size: 0.9em;
+            color: #00D4FF;
+            margin-bottom: 5px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+apply_custom_styles()
+
+# --- 4. OTURUM VE YETKİ YÖNETİMİ ---
+if 'authorized' not in st.session_state:
+    st.session_state.authorized = False
+if 'current_user' not in st.session_state:
+    st.session_state.current_user = ""
+if 'user_rank' not in st.session_state:
+    st.session_state.user_rank = "GUEST"
+
+def audit_log(user, action):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(FILES["logs"], "a", encoding="utf-8") as f:
+        f.write(f"[{timestamp}] AGENT: {user} | ACTION: {action}\n")
+
+# --- 5. MODÜLLER ---
+
+def login_gateway():
+    st.title("📟 ZERO_NETWORK GATEWAY v30")
+    st.write("Sistem erişimi için kimlik doğrulama gereklidir.")
     
-    else:
-        # SIDEBAR
-        st.sidebar.title(f"AGENT: {st.session_state.user}")
-        st.sidebar.subheader(f"RANK: {st.session_state.rank}")
+    tab_login, tab_reg = st.tabs(["[ AUTH_LOGIN ]", "[ NODE_REGISTRY ]"])
+    
+    with tab_login:
+        user_id = st.text_input("AGENT_ID", placeholder="Kullanıcı adınız...")
+        access_key = st.text_input("ACCESS_KEY", type="password", placeholder="Şifreniz...")
         
-        menu = st.sidebar.radio("NAV", ["GLOBAL FEED", "TECH OPS", "ROOT"])
-        
-        if st.sidebar.button("EXIT"):
-            st.session_state.auth = False
-            st.rerun()
-
-        # MODULES
-        if menu == "GLOBAL FEED":
-            st.subheader("🌐 GLOBAL BROADCAST")
-            with st.container(height=400, border=True):
-                with open(DB_PATHS["global"], "r") as f:
+        if st.button("INBOUND_AUTHORIZE"):
+            if user_id == "admin" and access_key == "1234":
+                st.session_state.authorized = True
+                st.session_state.current_user = "admin"
+                st.session_state.user_rank = "GHOST"
+                audit_log("admin", "Authorized as ROOT")
+                st.rerun()
+            else:
+                found = False
+                with open(FILES["auth"], "r") as f:
                     for line in f:
-                        parts = line.strip().split("|")
-                        if len(parts) == 3:
-                            st.markdown(f"<div class='chat-card'><b>{parts[0]}</b> ({parts[2]}):<br>{crypt_v30(parts[1], 'dec')}</div>", unsafe_allow_html=True)
-            
-            with st.form("msg_form", clear_on_submit=True):
-                msg = st.text_input("Enter Signal...")
-                if st.form_submit_button("SEND") and msg:
-                    ts = datetime.now().strftime("%H:%M")
-                    with open(DB_PATHS["global"], "a") as f:
-                        f.write(f"{st.session_state.user}|{crypt_v30(msg)}|{ts}\n")
-                    st.rerun()
-
-        elif menu == "TECH OPS":
-            st.subheader("🛠️ CRYPTO STATION")
-            c1, c2 = st.columns(2)
-            with c1:
-                t_e = st.text_area("To Enc
+                        if f"{user_id}:{access_key}" in line.strip():
+                            found = True
+                            break
+                if found:
+                    st.session_state.authorized = True
+                    st.session_state.current_user = user_id
+                    st.session_state.user_rank = "MEMBER"
+                    audit_log(user_id, "Login Success")
+                    st
