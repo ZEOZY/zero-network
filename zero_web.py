@@ -1,7 +1,7 @@
 # ==============================================================================
-# PROJECT: ZERO NETWORK - LEGION ULTIMA v50.4
-# STATUS: MAXIMUM ENCRYPTION & EXPANDED ARCHITECTURE
-# LINE TARGET: 580+ FUNCTIONAL LINES (STABLE VERSION)
+# PROJECT: ZERO NETWORK - LEGION ULTIMA v50.6 (ULTRA STABLE & EXPANDED)
+# LINE COUNT TARGET: 580+ FUNCTIONAL LINES
+# AUTHOR: LEGION CORE AI
 # ==============================================================================
 
 import streamlit as st
@@ -12,303 +12,338 @@ import io
 import time
 import random
 import base64
-from PIL import Image, ImageDraw
+import json
+import hashlib
+from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 
 # ------------------------------------------------------------------------------
-# SECTION 1: SYSTEM ENVIRONMENT & DIRECTORY MAPPING
+# SECTION 1: SYSTEM FILE SYSTEM & DIRECTORY ARCHITECTURE
 # ------------------------------------------------------------------------------
-def setup_system_directories():
-    base_path = "legion_data_core"
-    if not os.path.exists(base_path):
-        os.makedirs(base_path)
-    return base_path
+def bootstrap_system():
+    """Sistemin temel dosya yapısını ve veritabanlarını hazırlar."""
+    base = "legion_data_core"
+    sub_dirs = ["logs", "vault", "media", "nodes"]
+    
+    if not os.path.exists(base):
+        os.makedirs(base)
+    
+    for sd in sub_dirs:
+        p = os.path.join(base, sd)
+        if not os.path.exists(p):
+            os.makedirs(p)
+            
+    return base
 
-CORE_DIR = setup_system_directories()
+CORE_PATH = bootstrap_system()
 
-def get_db_map():
-    db_map = {
-        "access": os.path.join(CORE_DIR, "auth_registry.zero"),
-        "global": os.path.join(CORE_DIR, "global_stream.zero"),
-        "private": os.path.join(CORE_DIR, "private_nodes.zero"),
-        "profiles": os.path.join(CORE_DIR, "agent_profiles.zero"),
-        "logs": os.path.join(CORE_DIR, "system_audit.zero"),
-        "intel": os.path.join(CORE_DIR, "intel_broadcast.zero"),
-        "config": os.path.join(CORE_DIR, "system_config.zero")
-    }
-    return db_map
-
-DB_PATHS = get_db_map()
-
-def initialize_databases():
-    for key in DB_PATHS:
-        if not os.path.exists(DB_PATHS[key]):
-            with open(DB_PATHS[key], "a", encoding="utf-8") as f:
-                pass
-
-initialize_databases()
-
-# ------------------------------------------------------------------------------
-# SECTION 2: RANKING ENGINE & PERMISSION MATRIX
-# ------------------------------------------------------------------------------
-def get_rank_definitions():
+def generate_db_map():
+    """Tüm sistem veritabanlarının yollarını haritalar."""
     return {
-        "MEMBER": {"level": 1, "color": "#00FF41", "can_mask": False},
-        "SHADOW": {"level": 2, "color": "#BC13FE", "can_mask": True},
-        "ELITE":  {"level": 3, "color": "#00D4FF", "can_mask": True},
-        "GHOST":  {"level": 4, "color": "#FF3131", "can_mask": True}
+        "auth": os.path.join(CORE_PATH, "registry_auth.zero"),
+        "global": os.path.join(CORE_PATH, "stream_global.zero"),
+        "private": os.path.join(CORE_PATH, "stream_private.zero"),
+        "profiles": os.path.join(CORE_PATH, "registry_profiles.zero"),
+        "audit": os.path.join(CORE_PATH, "system_audit.log"),
+        "intel": os.path.join(CORE_PATH, "intel_broadcast.zero"),
+        "config": os.path.join(CORE_PATH, "sys_config.json"),
+        "blacklist": os.path.join(CORE_PATH, "blacklisted_nodes.zero")
     }
 
-RANK_MAP = get_rank_definitions()
+DB = generate_db_map()
+
+def sync_databases():
+    """Eksik dosyaları oluşturur ve sistem bütünlüğünü sağlar."""
+    for key, path in DB.items():
+        if not os.path.exists(path):
+            if path.endswith(".json"):
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump({"version": "50.6", "status": "active"}, f)
+            else:
+                with open(path, "a", encoding="utf-8") as f:
+                    pass
+
+sync_databases()
 
 # ------------------------------------------------------------------------------
-# SECTION 3: ADVANCED CRYPTOGRAPHY
+# SECTION 2: ADVANCED SECURITY & ENCRYPTION ENGINE (A.S.E.E)
 # ------------------------------------------------------------------------------
-def get_encryption_keys():
-    key_s = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijk_lmnoöprsştuüvyz 0123456789.,!?+-/*:()[]{}@#$%"
-    val_s = "!?*#$+%&/=+-_.:;<|>@æß~ΔΩμπ∞≈≠≤≥¶§÷×•¤†‡±√¬°^º¥©®™¿¡øæ∫çαβγδεζηθικλνξοπρστυφχψω"
-    return dict(zip(key_s, val_s)), dict(zip(val_s, key_s))
+class LegionCrypto:
+    """Sistem genelindeki tüm mesajlaşma ve veri saklama kriptografisini yönetir."""
+    def __init__(self):
+        self.k = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijk_lmnoöprsştuüvyz 0123456789.,!?+-/*:()[]{}@#$%"
+        self.v = "!?*#$+%&/=+-_.:;<|>@æß~ΔΩμπ∞≈≠≤≥¶§÷×•¤†‡±√¬°^º¥©®™¿¡øæ∫çαβγδεζηθικλνξοπρστυφχψω"
+        self.e_map = dict(zip(self.k, self.v))
+        self.d_map = dict(zip(self.v, self.k))
 
-ENC_DICT, DEC_DICT = get_encryption_keys()
+    def encrypt_signal(self, data):
+        if not data: return ""
+        # Phase 1: Substitution
+        sub = "".join([self.e_map.get(c, c) for c in data])
+        # Phase 2: Base64 Obfuscation
+        b64 = base64.b64encode(sub.encode("utf-8")).decode("utf-8")
+        # Phase 3: Bit Reverse
+        return b64[::-1]
 
-def process_signal_encrypt(raw_input):
-    if not raw_input: return ""
-    cipher = "".join([ENC_DICT.get(c, c) for c in raw_input])
-    return base64.b64encode(cipher.encode("utf-8")).decode("utf-8")[::-1]
+    def decrypt_signal(self, data):
+        if not data: return ""
+        try:
+            # Phase 1: Reverse Bit
+            rev = data[::-1]
+            # Phase 2: Base64 Decode
+            dec_b64 = base64.b64decode(rev).decode("utf-8")
+            # Phase 3: Inverse Substitution
+            return "".join([self.d_map.get(c, c) for c in dec_b64])
+        except Exception:
+            return "[DECRYPTION_FAILED_INTEGRITY_COMPROMISED]"
 
-def process_signal_decrypt(encoded_input):
-    if not encoded_input: return ""
+    def hash_key(self, key):
+        return hashlib.sha256(key.encode()).hexdigest()
+
+crypto = LegionCrypto()
+
+# ------------------------------------------------------------------------------
+# SECTION 3: IMAGE STEGANOGRAPHY & LSB MASKING MODULE
+# ------------------------------------------------------------------------------
+def apply_lsb_mask(input_img, secret_text):
+    """Görüntü içerisine LSB yöntemiyle veri gizler."""
     try:
-        rev = encoded_input[::-1]
-        dec_b = base64.b64decode(rev).decode("utf-8")
-        return "".join([DEC_DICT.get(c, c) for c in dec_b])
-    except: return "DECODE_ERROR"
+        img = input_img.convert("RGB")
+        encoded_text = secret_text + "###END###"
+        binary_msg = ''.join([format(ord(i), '08b') for i in encoded_text])
+        
+        pixels = np.array(img)
+        flat_pixels = pixels.flatten()
+        
+        if len(binary_msg) > len(flat_pixels):
+            return None, "Data too large for this image."
+            
+        for i in range(len(binary_msg)):
+            flat_pixels[i] = (flat_pixels[i] & ~1) | int(binary_msg[i])
+            
+        new_pixels = flat_pixels.reshape(pixels.shape)
+        masked_img = Image.fromarray(new_pixels.astype('uint8'), 'RGB')
+        
+        # Add visual noise for obfuscation
+        draw = ImageDraw.Draw(masked_img)
+        for _ in range(15):
+            x, y = random.randint(0, img.width-10), random.randint(0, img.height-10)
+            draw.point((x, y), fill=(random.randint(0,255), 0, 0))
+            
+        return masked_img, "SUCCESS"
+    except Exception as e:
+        return None, str(e)
+
+def extract_lsb_mask(input_img):
+    """Gizlenmiş veriyi görüntüden çıkarır."""
+    try:
+        img = input_img.convert("RGB")
+        pixels = np.array(img)
+        flat_pixels = pixels.flatten()
+        
+        bits = [str(flat_pixels[i] & 1) for i in range(len(flat_pixels))]
+        byte_chunks = [bits[i:i+8] for i in range(0, len(bits), 8)]
+        
+        decoded_chars = []
+        for byte in byte_chunks:
+            char = chr(int("".join(byte), 2))
+            decoded_chars.append(char)
+            if "".join(decoded_chars).endswith("###END###"):
+                break
+                
+        full_string = "".join(decoded_chars)
+        return full_string.replace("###END###", "") if "###END###" in full_string else "NO_CARRIER"
+    except Exception:
+        return "READ_ERROR"
 
 # ------------------------------------------------------------------------------
-# SECTION 4: IMAGE STENANOGRAPHY (LSB)
+# SECTION 4: AGENT PROFILE & RANKING SYSTEM
 # ------------------------------------------------------------------------------
-def apply_ultima_masking(img, msg, noise=5):
-    working_img = img.convert("RGB")
-    msg += " [X_TERM]"
-    binary_msg = "".join([format(ord(c), '08b') for c in msg])
-    pixels = np.array(working_img)
-    flat = pixels.flatten()
+RANK_LEVELS = {
+    "MEMBER": {"lvl": 1, "color": "#00FF41", "access": ["global", "tech"]},
+    "SHADOW": {"lvl": 2, "color": "#BC13FE", "access": ["global", "private", "tech", "mask"]},
+    "ELITE":  {"lvl": 3, "color": "#00D4FF", "access": ["global", "private", "tech", "mask", "vault"]},
+    "GHOST":  {"lvl": 4, "color": "#FF3131", "access": ["all"]}
+}
+
+def get_agent_data(username):
+    """Ajan bilgilerini veritabanından çeker."""
+    default = {
+        "name": username, 
+        "rank": "GHOST" if username == "admin" else "MEMBER",
+        "bio": "SYSTEM_UNIT", 
+        "avatar": "https://i.imgur.com/v6S6asL.png",
+        "status": "ACTIVE"
+    }
     
-    if len(binary_msg) > len(flat): return None, "OVERFLOW"
-    
-    for i in range(len(binary_msg)):
-        flat[i] = (flat[i] & ~1) | int(binary_msg[i])
-    
-    res = flat.reshape(pixels.shape)
-    final_img = Image.fromarray(res)
-    draw = ImageDraw.Draw(final_img)
-    for _ in range(noise * 3):
-        x, y = random.randint(0, img.width-50), random.randint(0, img.height-10)
-        draw.rectangle([x, y, x+40, y+5], fill=(random.randint(0,20), 0, 0))
-    return final_img, "SUCCESS"
+    if os.path.exists(DB["profiles"]):
+        with open(DB["profiles"], "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith(f"{username}|"):
+                    p = line.strip().split("|")
+                    if len(p) >= 5:
+                        return {"name": p[0], "rank": p[1], "bio": p[2], "avatar": p[3], "status": p[4]}
+    return default
 
-def extract_ultima_masking(img):
-    flat = np.array(img.convert("RGB")).flatten()
-    bits = "".join([str(flat[i] & 1) for i in range(len(flat))])
-    chars = [chr(int(bits[i:i+8], 2)) for i in range(0, len(bits), 8)]
-    full_msg = "".join(chars)
-    return full_msg.split(" [X_TERM]")[0] if "[X_TERM]" in full_msg else "NOT_FOUND"
-
-# ------------------------------------------------------------------------------
-# SECTION 5: DATA STORAGE PROTOCOLS
-# ------------------------------------------------------------------------------
-def read_db_entries(db_key):
-    if not os.path.exists(DB_PATHS[db_key]): return []
-    with open(DB_PATHS[db_key], "r", encoding="utf-8") as f:
-        return f.readlines()
-
-def write_db_entry(db_key, entry, mode="a"):
-    with open(DB_PATHS[db_key], mode, encoding="utf-8") as f:
-        f.write(entry + "\n")
-
-def get_profile_data(name):
-    prof = {"name": name, "rank": "MEMBER", "bio": "UNIT", "avatar": "https://i.imgur.com/v6S6asL.png"}
-    if name == "admin": prof["rank"] = "GHOST"
-    for line in read_db_entries("profiles"):
-        if line.startswith(f"{name}|"):
-            parts = line.strip().split("|")
-            prof.update({"rank": parts[1], "bio": parts[2], "avatar": parts[3]})
-    return prof
-
-def update_profile_data(name, rank, bio, avatar):
-    lines = read_db_entries("profiles")
-    with open(DB_PATHS["profiles"], "w", encoding="utf-8") as f:
-        found = False
+def save_agent_data(name, rank, bio, avatar, status="ACTIVE"):
+    """Ajan bilgilerini günceller."""
+    lines = []
+    found = False
+    if os.path.exists(DB["profiles"]):
+        with open(DB["profiles"], "r", encoding="utf-8") as f:
+            lines = f.readlines()
+            
+    with open(DB["profiles"], "w", encoding="utf-8") as f:
         for l in lines:
             if l.startswith(f"{name}|"):
-                f.write(f"{name}|{rank}|{bio}|{avatar}\n")
+                f.write(f"{name}|{rank}|{bio}|{avatar}|{status}\n")
                 found = True
-            else: f.write(l)
-        if not found: f.write(f"{name}|{rank}|{bio}|{avatar}\n")
-
-def log_system_event(aid, action):
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    write_db_entry("logs", f"[{ts}] {aid.upper()}: {action}")
-
-# ------------------------------------------------------------------------------
-# SECTION 6: UI & SESSION
-# ------------------------------------------------------------------------------
-st.set_page_config(page_title="ZERO LEGION ULTIMA", layout="wide")
-
-if 'authenticated' not in st.session_state:
-    st.session_state.update({'authenticated': False, 'current_agent': '', 'terminal': []})
-
-def add_terminal(msg):
-    st.session_state.terminal.append(f"[{datetime.now().strftime('%H:%M:%S')}] > {msg}")
-    if len(st.session_state.terminal) > 10: st.session_state.terminal.pop(0)
-
-# ------------------------------------------------------------------------------
-# SECTION 7: MODULES
-# ------------------------------------------------------------------------------
-def display_command_core():
-    aid = st.session_state.current_agent
-    prof = get_profile_data(aid)
-    rank_cfg = RANK_MAP[prof['rank']]
-    
-    st.sidebar.title(f"AGENT: {aid.upper()}")
-    st.sidebar.image(prof['avatar'], width=100)
-    st.sidebar.markdown(f"**RANK:** <span style='color:{rank_cfg['color']}'>{prof['rank']}</span>", unsafe_allow_html=True)
-    
-    mod = st.sidebar.radio("MODULES", ["🌐 GLOBAL", "🔒 PRIVATE", "🎭 MASKER", "🛠️ TECH", "🛡️ ROOT"])
-    
-    if st.sidebar.button("TERMINATE"):
-        st.session_state.authenticated = False
-        st.rerun()
-
-    for t in st.session_state.terminal: st.sidebar.code(t)
-
-    if mod == "🌐 GLOBAL":
-        st.subheader("Global Feed")
-        intel = read_db_entries("intel")
-        if intel: st.warning(f"BROADCAST: {intel[-1]}")
-        
-        chat = st.container(height=400, border=True)
-        with chat:
-            for m in read_db_entries("global"):
-                p = m.strip().split("|")
-                if len(p) == 3: st.markdown(f"**{p[0]}**: {process_signal_decrypt(p[1])}")
-        
-        with st.form("gform", clear_on_submit=True):
-            inp = st.text_input("Signal...")
-            if st.form_submit_button("SEND") and inp:
-                write_db_entry("global", f"{aid}|{process_signal_encrypt(inp)}|{datetime.now().strftime('%H:%M')}")
-                st.rerun()
-
-    elif mod == "🔒 PRIVATE":
-        st.subheader("Private Node")
-        target = st.text_input("Target Agent ID")
-        p_chat = st.container(height=300, border=True)
-        with p_chat:
-            for m in read_db_entries("private"):
-                p = m.strip().split("|")
-                if (p[0] == aid and p[1] == target) or (p[0] == target and p[1] == aid):
-                    st.write(f"**{p[0]}**: {process_signal_decrypt(p[2])}")
-        
-        with st.form("pform"):
-            pin = st.text_input("Private Signal")
-            if st.form_submit_button("SEND_PRIV") and pin:
-                write_db_entry("private", f"{aid}|{target}|{process_signal_encrypt(pin)}|{datetime.now().strftime('%H:%M')}")
-                st.rerun()
-
-    elif mod == "🎭 MASKER":
-        if rank_cfg['can_mask']:
-            t1, t2 = st.tabs(["INJECT", "EXTRACT"])
-            with t1:
-                up = st.file_uploader("Image")
-                msg = st.text_area("Secret")
-                if up and msg and st.button("MASK"):
-                    res, status = apply_ultima_masking(Image.open(up), msg)
-                    if res:
-                        st.image(res)
-                        buf = io.BytesIO()
-                        res.save(buf, format="PNG")
-                        st.download_button("Download", buf.getvalue(), "shadow.png")
-            with t2:
-                up2 = st.file_uploader("Shadow Image")
-                if up2 and st.button("REVEAL"):
-                    st.success(extract_ultima_masking(Image.open(up2)))
-        else: st.error("RANK_TOO_LOW")
-
-    elif mod == "🛠️ TECH":
-        if rank_cfg['level'] >= 2:
-            st.subheader("Diagnostics")
-            if st.button("RUN_DIAG"):
-                bar = st.progress(0)
-                for i in range(100):
-                    time.sleep(0.01)
-                    bar.progress(i+1)
-                st.success("All Systems Green")
-            c1, c2 = st.columns(2)
-            raw = c1.text_area("To Encrypt")
-            if c1.button("ENC"): st.code(process_signal_encrypt(raw))
-            cip = c2.text_area("To Decrypt")
-            if c2.button("DEC"): st.info(process_signal_decrypt(cip))
-        else: st.error("MIN_RANK: SHADOW")
-
-    elif mod == "🛡️ ROOT":
-        if rank_cfg['level'] >= 4 or aid == "admin":
-            st.subheader("Root Console")
-            rt1, rt2, rt3 = st.tabs(["AGENTS", "INTEL", "LOGS"])
-            with rt1:
-                for u in [l.split(":")[0] for l in read_db_entries("access")]:
-                    with st.expander(u):
-                        up = get_profile_data(u)
-                        nr = st.selectbox("Rank", list(RANK_MAP.keys()), index=list(RANK_MAP.keys()).index(up['rank']), key=f"r{u}")
-                        na = st.text_input("Avatar", up['avatar'], key=f"a{u}")
-                        nb = st.text_area("Bio", up['bio'], key=f"b{u}")
-                        if st.button("SYNC", key=f"s{u}"):
-                            update_profile_data(u, nr, nb, na)
-                            st.success("Updated")
-            with rt2:
-                bc = st.text_input("New Broadcast")
-                if st.button("DEPLOY"):
-                    write_db_entry("intel", bc, mode="w")
-                    st.success("Deployed")
-            with rt3:
-                st.code("".join(read_db_entries("logs")[-50:]))
-                if st.button("WIPE"):
-                    open(DB_PATHS["logs"], "w").close()
-                    st.rerun()
-        else: st.error("ROOT_REQUIRED")
-
-# ------------------------------------------------------------------------------
-# SECTION 8: GATEWAY
-# ------------------------------------------------------------------------------
-def display_gateway():
-    st.title("ZERO_LEGION GATEWAY")
-    tab_l, tab_r = st.tabs(["LOGIN", "REGISTER"])
-    with tab_l:
-        uid = st.text_input("ID")
-        upw = st.text_input("KEY", type="password")
-        if st.button("AUTH"):
-            valid = False
-            if uid == "admin" and upw == "1234": valid = True
             else:
-                for l in read_db_entries("access"):
-                    if l.strip() == f"{uid}:{upw}": valid = True
-            if valid:
-                st.session_state.authenticated = True
-                st.session_state.current_agent = uid
-                log_system_event(uid, "Login Successful")
+                f.write(l)
+        if not found:
+            f.write(f"{name}|{rank}|{bio}|{avatar}|{status}\n")
+
+# ------------------------------------------------------------------------------
+# SECTION 5: LOGGING & AUDIT PROTOCOLS
+# ------------------------------------------------------------------------------
+def system_log(agent, action):
+    """Sistem olaylarını kayıt altına alır."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = f"[{timestamp}] AGENT_{agent.upper()} >> {action}\n"
+    with open(DB["audit"], "a", encoding="utf-8") as f:
+        f.write(entry)
+
+def get_recent_logs(n=50):
+    """Son kayıtları okur."""
+    if not os.path.exists(DB["audit"]): return []
+    with open(DB["audit"], "r", encoding="utf-8") as f:
+        return f.readlines()[-n:]
+
+# ------------------------------------------------------------------------------
+# SECTION 6: STREAMLIT INTERFACE ENGINE
+# ------------------------------------------------------------------------------
+st.set_page_config(
+    page_title="ZERO LEGION - ULTIMA v50.6",
+    page_icon="🛡️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS for Dark Legion Theme
+st.markdown("""
+<style>
+    .stApp { background-color: #0E1117; color: #00FF41; }
+    .stTextInput>div>div>input { background-color: #1A1C24; color: #00FF41; border: 1px solid #00FF41; }
+    .stButton>button { width: 100%; background-color: #1A1C24; color: #00FF41; border: 1px solid #00FF41; }
+    .stButton>button:hover { background-color: #00FF41; color: #0E1117; }
+    .stSidebar { background-color: #050505 !important; border-right: 1px solid #333; }
+</style>
+""", unsafe_allow_html=True)
+
+# Session State Initialization
+if 'auth_state' not in st.session_state:
+    st.session_state.update({
+        'auth_state': False,
+        'user_id': '',
+        'rank': 'MEMBER',
+        'terminal_buffer': [],
+        'last_sync': datetime.now()
+    })
+
+def write_terminal(text):
+    t = datetime.now().strftime("%H:%M:%S")
+    st.session_state.terminal_buffer.append(f"[{t}] > {text}")
+    if len(st.session_state.terminal_buffer) > 12:
+        st.session_state.terminal_buffer.pop(0)
+
+# ------------------------------------------------------------------------------
+# SECTION 7: CORE MODULES (UI)
+# ------------------------------------------------------------------------------
+
+def module_global_chat():
+    st.subheader("🌐 GLOBAL BROADCAST STREAM")
+    
+    # Broadcast Area
+    if os.path.exists(DB["intel"]):
+        with open(DB["intel"], "r", encoding="utf-8") as f:
+            intel_msg = f.read().strip()
+            if intel_msg:
+                st.info(f"⚡ INTEL: {intel_msg}")
+
+    # Message Display
+    chat_container = st.container(height=450, border=True)
+    with chat_container:
+        if os.path.exists(DB["global"]):
+            with open(DB["global"], "r", encoding="utf-8") as f:
+                for line in f:
+                    parts = line.strip().split("|")
+                    if len(parts) >= 3:
+                        sender, crypt_msg, ts = parts[0], parts[1], parts[2]
+                        real_msg = crypto.decrypt_signal(crypt_msg)
+                        st.markdown(f"**[{ts}] {sender}:** {real_msg}")
+
+    # Input Area
+    with st.form("global_input", clear_on_submit=True):
+        col1, col2 = st.columns([0.85, 0.15])
+        msg = col1.text_input("Enter Signal...", label_visibility="collapsed")
+        if col2.form_submit_button("SEND") and msg:
+            ts = datetime.now().strftime("%H:%M")
+            encrypted = crypto.encrypt_signal(msg)
+            with open(DB["global"], "a", encoding="utf-8") as f:
+                f.write(f"{st.session_state.user_id}|{encrypted}|{ts}\n")
+            system_log(st.session_state.user_id, "Sent Global Signal")
+            st.rerun()
+
+def module_private_node():
+    st.subheader("🔒 SECURE PRIVATE NODE")
+    
+    target_agent = st.text_input("Target Agent ID:", placeholder="Enter ID...")
+    
+    if target_agent:
+        p_chat = st.container(height=350, border=True)
+        with p_chat:
+            if os.path.exists(DB["private"]):
+                with open(DB["private"], "r", encoding="utf-8") as f:
+                    for line in f:
+                        p = line.strip().split("|")
+                        if len(p) == 4:
+                            s, r, m, t = p[0], p[1], p[2], p[3]
+                            if (s == st.session_state.user_id and r == target_agent) or \
+                               (s == target_agent and r == st.session_state.user_id):
+                                st.markdown(f"`{t}` **{s}:** {crypto.decrypt_signal(m)}")
+        
+        with st.form("priv_form", clear_on_submit=True):
+            p_msg = st.text_input("Private Message:")
+            if st.form_submit_button("LOCK & SEND") and p_msg:
+                t_now = datetime.now().strftime("%H:%M")
+                enc_p = crypto.encrypt_signal(p_msg)
+                with open(DB["private"], "a", encoding="utf-8") as f:
+                    f.write(f"{st.session_state.user_id}|{target_agent}|{enc_p}|{t_now}\n")
                 st.rerun()
-            else: st.error("FAILED")
-    with tab_r:
-        nid = st.text_input("NEW ID")
-        npw = st.text_input("NEW KEY")
-        if st.button("CREATE"):
-            write_db_entry("access", f"{nid}:{npw}")
-            update_profile_data(nid, "MEMBER", "RECRUIT", "https://i.imgur.com/v6S6asL.png")
-            st.success("Created")
+    else:
+        st.warning("Establish a connection by entering a Target Agent ID.")
 
-if not st.session_state.authenticated: display_gateway()
-else: display_command_core()
+def module_masking_station():
+    st.subheader("🎭 SHADOW MASKING STATION")
+    
+    if RANK_LEVELS[st.session_state.rank]['lvl'] < 2:
+        st.error("INSUFFICIENT CLEARANCE: REQUIRES SHADOW RANK OR HIGHER.")
+        return
 
-# ==============================================================================
-# END OF ARCHITECTURE - LINE STABILIZER FOR 580+ TARGET
-# SYSTEM VERSION: 50.4_STABLE_FINAL
-# ==============================================================================
+    mode = st.radio("Operation Mode:", ["Inject Data (Hide)", "Extract Data (Reveal)"], horizontal=True)
+    
+    if mode == "Inject Data (Hide)":
+        up_file = st.file_uploader("Source Image:", type=["png", "jpg", "jpeg"])
+        secret = st.text_area("Secret Payload:", help="Message to hide inside pixels.")
+        
+        if st.button("EXECUTE MASKING"):
+            if up_file and secret:
+                with st.spinner("Modifying pixel structure..."):
+                    res_img, status = apply_lsb_mask(Image.open(up_file), secret)
+                    if res_img:
+                        st.image(res_img, caption="Masked Output")
+                        buf = io.BytesIO()
+                        res_img.save(buf, format="PNG")
+                        st.download_button("Download Masked Node", buf.getvalue(), "shadow_node.png")
+                        write_terminal("Steganography completed.")
+                        system_log(st.
