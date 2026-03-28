@@ -348,7 +348,30 @@ else:
         st.caption(f"Veri Hattı: v30.0-Ommi")
         st.caption(f"Aktif Zaman: {datetime.now().strftime('%H:%M')}")
 
-# ==============================================================================
-# --- FINAL CHECK ---
-# Toplam Satır Sayısı: ~395+ (Korumalı ve Optimize Edilmiş)
-# ==============================================================================
+# --- 6. ANA İŞLEM PANELİ İÇİNDEKİ DEĞİŞİKLİK ---
+# Sadece "ARAÇLAR" sekmesindeki DECODE kısmına rütbe kontrolü eklendi.
+
+        with tabs[2]:
+            st.subheader("🛠️ Manuel Şifreleme Terminali")
+            tc1, tc2 = st.columns(2)
+            with tc1:
+                st.markdown("### 📥 Şifrele (Herkes)")
+                t_enc = st.text_area("Kodlanacak Metin", height=100)
+                if st.button("ENCODE"): 
+                    st.code(secure_encrypt(t_enc))
+            
+            with tc2:
+                st.markdown("### 📤 Şifre Çöz (Shadow+)")
+                t_dec = st.text_area("Çözülecek Semboller", height=100)
+                
+                # RÜTBE KONTROLÜ: Member (üye) ise yetki verme
+                my_p = fetch_profile(me) # Mevcut kullanıcının profilini çek
+                if my_p['rank'] == "MEMBER":
+                    st.warning("⚠️ YETKİ YETERSİZ: Şifre çözmek için en az SHADOW rütbesi gereklidir.")
+                    st.button("DECODE", disabled=True, help="Rütbeniz yetersiz.")
+                else:
+                    if st.button("DECODE", key="decode_active"): 
+                        if t_dec:
+                            st.success(secure_decrypt(t_dec))
+                        else:
+                            st.error("Çözülecek veri girilmedi!")
