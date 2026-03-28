@@ -20,8 +20,7 @@ DB_FILES = {
     "profs": "db_user_profs.txt",
     "logs": "db_system_logs.txt",
     "vault": "db_vault_files.txt",
-    "lock": "db_lock.txt", 
-}
+    "lock": "db_lock.txt" 
 }
 
 # Dosya sistemini boot sürecinde başlat.
