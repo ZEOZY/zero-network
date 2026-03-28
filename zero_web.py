@@ -287,14 +287,21 @@ else:
             st.subheader("🛠️ Manuel Şifreleme Terminali")
             tc1, tc2 = st.columns(2)
             with tc1:
-                st.markdown("### 📥 Şifrele (Herkes)")
+                st.markdown("### 📥 Şifrele (Shadow+)")
                 t_enc = st.text_area("Kodlanacak Metin", key="tools_enc_area")
-                if st.button("ENCODE", key="btn_enc_tool"): st.code(secure_encrypt(t_enc))
+                
+                # --- ENCODE RÜTBE KONTROLÜ ---
+                if me == "admin" or my_p['rank'] != "MEMBER":
+                    if st.button("ENCODE", key="btn_enc_tool"): st.code(secure_encrypt(t_enc))
+                else:
+                    st.warning("⚠️ YETKİ YETERSİZ: Şifreleme için Shadow rütbesi gereklidir.")
+                    st.button("ENCODE", disabled=True, key="btn_enc_locked")
+
             with tc2:
                 st.markdown("### 📤 Şifre Çöz (Shadow+)")
                 t_dec = st.text_area("Çözülecek Semboller", key="tools_dec_area")
                 
-                # --- ROOT VE SHADOW ÜSTÜ İÇİN ÖZEL KONTROL ---
+                # --- DECODE RÜTBE KONTROLÜ ---
                 if me == "admin" or my_p['rank'] != "MEMBER":
                     if st.button("DECODE", key="btn_dec_active"):
                         if t_dec:
