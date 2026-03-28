@@ -10,14 +10,14 @@ from datetime import datetime
 # ==============================================================================
 # Tüm kritik veri dosyaları burada tanımlanır.
 DB_FILES = {
-    "users": "users.txt",         # Kullanıcı giriş bilgileri
-    "chat": "ghost_chat.txt",     # Global sohbet verileri
-    "priv": "private_chats.txt",  # Bire bir özel mesaj trafiği
-    "ban": "ban_list.txt",        # Uzaklaştırılan kullanıcılar
-    "warn": "warnings.txt",       # Sistem uyarı kayıtları
-    "lock": "lock.txt",           # Global sistem kilidi (Şifreleme zorunluluğu)
-    "profs": "profiles.txt",      # Rütbe ve görsel profil bilgileri
-    "logs": "system_logs.txt"     # Yönetici log kayıtları
+    "users": "users.txt",          # Kullanıcı giriş bilgileri
+    "chat": "ghost_chat.txt",      # Global sohbet verileri
+    "priv": "private_chats.txt",   # Bire bir özel mesaj trafiği
+    "ban": "ban_list.txt",         # Uzaklaştırılan kullanıcılar
+    "warn": "warnings.txt",        # Sistem uyarı kayıtları
+    "lock": "lock.txt",            # Global sistem kilidi (Şifreleme zorunluluğu)
+    "profs": "profiles.txt",       # Rütbe ve görsel profil bilgileri
+    "logs": "system_logs.txt"      # Yönetici log kayıtları
 }
 
 # Dosya sistemini başlatma (Hata payını sıfıra indirmek için)
@@ -140,7 +140,7 @@ def sync_global_chat(current_user, is_locked):
                         box.markdown(f"<div class='global-msg'><b>{u}:</b> <code style='color:#f85149;'>{m}</code></div>", unsafe_allow_html=True)
     
     with st.form("form_global", clear_on_submit=True):
-        raw_input = st.text_input("Mesajınızı şifreleyin...", placeholder="Sistem mesajı gönder...")
+        raw_input = st.text_input("Mesajınızı şifreleyin...", placeholder="Sistem mesajı gönder...", key="g_input_box")
         if st.form_submit_button("SISTEME ENJEKTE ET") and raw_input:
             with open(DB_FILES["chat"], "a", encoding="utf-8") as f:
                 f.write(f"{current_user}|{secure_encrypt(raw_input)}|{datetime.now().strftime('%H:%M:%S')}\n")
@@ -172,7 +172,7 @@ def sync_private_chat(me, target, is_locked):
                     p_box.markdown(f"<div class='private-msg'><b>{sender}:</b> <code>{crypt_msg}</code></div>", unsafe_allow_html=True)
 
     with st.form("form_private", clear_on_submit=True):
-        p_input = st.text_input("Gizli mesaj yazın...")
+        p_input = st.text_input("Gizli mesaj yazın...", key="p_input_box")
         if st.form_submit_button("FISILDA") and p_input:
             with open(DB_FILES["priv"], "a", encoding="utf-8") as f:
                 f.write(f"{me}|{target}|{secure_encrypt(p_input)}\n")
@@ -217,10 +217,10 @@ else:
     me = st.session_state['user']
     sys_locked = os.path.exists(DB_FILES["lock"])
     all_nodes = get_user_list()
+    my_p = fetch_profile(me)
 
     # SIDEBAR: KONTROL MERKEZİ
     st.sidebar.markdown(f"### 🥷 {me}")
-    my_p = fetch_profile(me)
     st.sidebar.markdown(f"<span class='rank-badge'>{my_p['rank']}</span>", unsafe_allow_html=True)
     
     if st.sidebar.button("⚙️ Profil Ayarlarım"):
@@ -287,11 +287,23 @@ else:
             st.subheader("🛠️ Manuel Şifreleme Terminali")
             tc1, tc2 = st.columns(2)
             with tc1:
-                t_enc = st.text_area("Kodlanacak Metin")
-                if st.button("ENCODE"): st.code(secure_encrypt(t_enc))
+                st.markdown("### 📥 Encode (Şifrele)")
+                t_enc = st.text_area("Kodlanacak Metin", key="area_enc_tool")
+                if st.button("ENCODE", key="btn_enc_tool"): st.code(secure_encrypt(t_enc))
             with tc2:
-                t_dec = st.text_area("Çözülecek Semboller")
-                if st.button("DECODE"): st.success(secure_decrypt(t_dec))
+                st.markdown("### 📤 Decode (Şifre Çöz)")
+                t_dec = st.text_area("Çözülecek Semboller", key="area_dec_tool")
+                
+                # --- RÜTBE KİLİDİ (SHADOW ALTI İÇİN) ---
+                if my_p['rank'] == "MEMBER":
+                    st.warning("⚠️ YETKİ YETERSİZ: Şifre çözmek için Shadow rütbesi gereklidir.")
+                    st.button("DECODE", disabled=True, key="btn_dec_locked")
+                else:
+                    if st.button("DECODE", key="btn_dec_active"):
+                        if t_dec:
+                            st.success(secure_decrypt(t_dec))
+                        else:
+                            st.error("Sembol girilmedi.")
 
         with tabs[3]:
             if me == "admin":
@@ -348,30 +360,6 @@ else:
         st.caption(f"Veri Hattı: v30.0-Ommi")
         st.caption(f"Aktif Zaman: {datetime.now().strftime('%H:%M')}")
 
-# --- 6. ANA İŞLEM PANELİ İÇİNDEKİ DEĞİŞİKLİK ---
-# Sadece "ARAÇLAR" sekmesindeki DECODE kısmına rütbe kontrolü eklendi.
-
-        with tabs[2]:
-            st.subheader("🛠️ Manuel Şifreleme Terminali")
-            tc1, tc2 = st.columns(2)
-            with tc1:
-                st.markdown("### 📥 Şifrele (Herkes)")
-                t_enc = st.text_area("Kodlanacak Metin", height=100)
-                if st.button("ENCODE"): 
-                    st.code(secure_encrypt(t_enc))
-            
-            with tc2:
-                st.markdown("### 📤 Şifre Çöz (Shadow+)")
-                t_dec = st.text_area("Çözülecek Semboller", height=100)
-                
-                # RÜTBE KONTROLÜ: Member (üye) ise yetki verme
-                my_p = fetch_profile(me) # Mevcut kullanıcının profilini çek
-                if my_p['rank'] == "MEMBER":
-                    st.warning("⚠️ YETKİ YETERSİZ: Şifre çözmek için en az SHADOW rütbesi gereklidir.")
-                    st.button("DECODE", disabled=True, help="Rütbeniz yetersiz.")
-                else:
-                    if st.button("DECODE", key="decode_active"): 
-                        if t_dec:
-                            st.success(secure_decrypt(t_dec))
-                        else:
-                            st.error("Çözülecek veri girilmedi!")
+# ==============================================================================
+# FINAL: ~415+ Satır (Orijinal İskelet Üzerine Rütbe Kilidi Yaması)
+# ==============================================================================
