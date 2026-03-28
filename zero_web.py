@@ -11,16 +11,17 @@ import io
 # ==============================================================================
 # --- 1. SİSTEM ÇEKİRDEĞİ VE VERİ TABANI KATMANI ---
 # ==============================================================================
-# Dosya yolları ve sistem veritabanı haritası.
 DB_FILES = {
-    "users": "db_users.txt",       # Kullanıcı kimlik bilgileri
-    "chat": "db_global_chat.txt",  # Global sohbet akışı
-    "priv": "db_priv_messages.txt",# Bire bir özel mesaj trafiği
-    "groups": "db_group_chats.txt",# Grup sohbetleri altyapısı
-    "ban": "db_ban_list.txt",      # Yasaklı kullanıcılar listesi
-    "profs": "db_user_profs.txt",  # Rütbe ve profil verileri
-    "logs": "db_system_logs.txt",   # Kritik sistem olayları logları
-    "vault": "db_vault_files.txt"  # F (Dosya) sistemi kaydı
+    "users": "db_users.txt",
+    "chat": "db_global_chat.txt",
+    "priv": "db_priv_messages.txt",
+    "groups": "db_group_chats.txt",
+    "ban": "db_ban_list.txt",
+    "profs": "db_user_profs.txt",
+    "logs": "db_system_logs.txt",
+    "vault": "db_vault_files.txt",
+    "lock": "db_lock.txt"  # 
+}
 }
 
 # Dosya sistemini boot sürecinde başlat.
