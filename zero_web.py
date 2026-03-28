@@ -170,4 +170,126 @@ def login_gateway():
                     st.session_state.current_user = user_id
                     st.session_state.user_rank = "MEMBER"
                     audit_log(user_id, "Login Success")
-                    st
+                    st.rerun()
+                else:
+                    st.error("CREDENTIAL_MISMATCH: Erişim engellendi.")
+                    audit_log(user_id or "UNKNOWN", "Failed Login Attempt")
+
+    with tab_reg:
+        new_id = st.text_input("REQUEST_ID")
+        new_key = st.text_input("REQUEST_KEY", type="password")
+        confirm_key = st.text_input("CONFIRM_KEY", type="password")
+        
+        if st.button("INITIALIZE_NODE"):
+            if new_id and new_key == confirm_key:
+                with open(FILES["auth"], "a") as f:
+                    f.write(f"{new_id}:{new_key}\n")
+                st.success("Yeni düğüm (node) başarıyla oluşturuldu. Giriş yapabilirsiniz.")
+                audit_log(new_id, "Node Registered")
+            else:
+                st.warning("Şifreler uyuşmuyor veya geçersiz ID.")
+
+def run_global_stream():
+    st.subheader("🌐 NETWORK_GLOBAL_STREAM")
+    
+    # Mesajları Görüntüleme
+    stream_container = st.container(height=500, border=True)
+    with stream_container:
+        if os.path.getsize(FILES["stream"]) > 0:
+            with open(FILES["stream"], "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                for line in lines[-50:]:  # Son 50 mesaj
+                    try:
+                        sender, crypt_msg, ts = line.strip().split("|")
+                        st.markdown(f"""
+                        <div class="msg-container">
+                            <div class="msg-header">[{ts}] AGENT_{sender.upper()}</div>
+                            <div class="msg-body">{legion_decrypt(crypt_msg)}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    except: continue
+        else:
+            st.info("Akışta henüz veri bulunmuyor. İlk sinyali siz gönderin.")
+
+    # Mesaj Gönderme
+    with st.form("broadcast_form", clear_on_submit=True):
+        msg_input = st.text_input("Signal Input:", placeholder="Mesajınızı yazın...")
+        if st.form_submit_button("DEPLOY_SIGNAL") and msg_input:
+            t_stamp = datetime.now().strftime("%H:%M:%S")
+            encrypted = legion_encrypt(msg_input)
+            with open(FILES["stream"], "a", encoding="utf-8") as f:
+                f.write(f"{st.session_state.current_user}|{encrypted}|{t_stamp}\n")
+            st.rerun()
+
+def run_tech_station():
+    st.subheader("🛠️ TECH_OPS_STATION")
+    st.write("Manuel kriptolama ve sistem tanılama araçları.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("### Encryption Engine")
+        raw_text = st.text_area("Plaintext Input", height=150)
+        if st.button("RUN_ENCRYPTION"):
+            st.code(legion_encrypt(raw_text))
+            
+    with col2:
+        st.markdown("### Decryption Engine")
+        cipher_text = st.text_area("Ciphertext Input", height=150)
+        if st.button("RUN_DECRYPTION"):
+            st.success(legion_decrypt(cipher_text))
+
+def run_root_override():
+    st.subheader("🛡️ ROOT_AUTHORITY_OVERRIDE")
+    if st.session_state.user_rank != "GHOST":
+        st.error("INSUFFICIENT_PERMISSIONS: Bu alan sadece GHOST rankı içindir.")
+        return
+    
+    st.warning("DİKKAT: Yapılan işlemler geri alınamaz.")
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        if st.button("WIPE_GLOBAL_STREAM"):
+            open(FILES["stream"], "w").close()
+            st.success("Global akış temizlendi.")
+            audit_log("admin", "Wiped Global Stream")
+            
+    with col_b:
+        if st.button("EXPORT_AUDIT_LOGS"):
+            with open(FILES["logs"], "r") as f:
+                st.download_button("Download Logs", f.read(), "audit_log.txt")
+
+# --- 6. ANA KONTROL DÖNGÜSÜ ---
+def main():
+    if not st.session_state.authorized:
+        login_gateway()
+    else:
+        # Sidebar İçeriği
+        st.sidebar.image("https://i.imgur.com/v6S6asL.png", width=100)
+        st.sidebar.title(f"AGENT_{st.session_state.current_user.upper()}")
+        st.sidebar.markdown(f"**RANK:** {st.session_state.user_rank}")
+        st.sidebar.divider()
+        
+        module = st.sidebar.radio("SENSORS", ["GLOBAL STREAM", "TECH STATION", "ROOT OVERRIDE"])
+        
+        if st.sidebar.button("TERMINATE_SESSION"):
+            audit_log(st.session_state.current_user, "Logout")
+            st.session_state.authorized = False
+            st.rerun()
+            
+        st.sidebar.divider()
+        st.sidebar.write("SYSTEM_TIME:")
+        st.sidebar.code(datetime.now().strftime("%H:%M:%S"))
+
+        # Modül Yükleyici
+        if module == "GLOBAL STREAM":
+            run_global_stream()
+        elif module == "TECH STATION":
+            run_tech_station()
+        elif module == "ROOT OVERRIDE":
+            run_root_override()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        st.error(f"SYSTEM_FATAL: {e}")
